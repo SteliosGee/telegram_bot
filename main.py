@@ -44,14 +44,21 @@ async def remove_subscriber(update: Update):
     print(f"Removed subscriber: {chat_id}")
     await update.message.reply_text(f"Removed subscriber: {chat_id}")
 
-# Function to get all subscribers from the database
-def get_subscribers():
+# Function to get all subscribers from the database and list them
+async def list_subscribers(update: Update):
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
-    cursor.execute("SELECT chat_id, username FROM subscribers")
+    cursor.execute("SELECT chat_id, username, subscription_date FROM subscribers")
     rows = cursor.fetchall()
     conn.close()
-    return rows
+    
+    if len(rows) == 0:
+        await update.message.reply_text("No subscribers found.")
+    else:
+        message = "Subscribers:\n"
+        for chat_id, username, subscription_date in rows:
+            message += f"{username} ({chat_id}) - Subscription date: {subscription_date}\n"
+        await update.message.reply_text(message)
 
 # Function to notify subscribers about subscription expiry
 async def notify_subscribers():
@@ -79,7 +86,7 @@ async def notify_subscribers():
             subscription_end = subscription_start + timedelta(days=30)  # Subscription period: 1 month
             
             # Notify if subscription is about to expire (e.g., 2 days before expiry)
-            if (subscription_end - today).days <= 40:
+            if (subscription_end - today).days <= 2:
                 await bot.send_message(chat_id=chat_id, text="Your subscription is about to expire. Please renew your subscription.")
                 print(f"Notification sent to: {username} ({chat_id})")
         except Exception as e:
@@ -98,10 +105,11 @@ def start_scheduler():
             schedule.run_pending()
             await asyncio.sleep(1)
 
-    #schedule.every().day.at("09:00").do(lambda: asyncio.run_coroutine_threadsafe(notify_subscribers(), loop))
-    schedule.every(10).seconds.do(lambda: asyncio.run_coroutine_threadsafe(notify_subscribers(), loop))
+    schedule.every().day.at("09:00").do(lambda: asyncio.run_coroutine_threadsafe(notify_subscribers(), loop))
+    #schedule.every(10).seconds.do(lambda: asyncio.run_coroutine_threadsafe(notify_subscribers(), loop))
 
     loop.run_until_complete(run_scheduler())
+
 def main():
     # Create the database file if it doesn't exist
     if not os.path.exists(DB_PATH):
@@ -118,6 +126,7 @@ def main():
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("subscribe", lambda update, context: add_subscriber(update)))
     application.add_handler(CommandHandler("unsubscribe", lambda update, context: remove_subscriber(update)))
+    application.add_handler(CommandHandler("list", lambda update, context: list_subscribers(update)))
 
     # Start the scheduler in a separate thread
     scheduler_thread = threading.Thread(target=start_scheduler, daemon=True)
