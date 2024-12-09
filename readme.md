@@ -20,7 +20,7 @@ pip install -r requirements.txt
 
 ## Usage
 
-1. Create a new bot using [BotFather](https://core.telegram.org/bots#6-botfather).
+1. Create a new bot using [BotFather](https://telegram.me/BotFather).
 2. Replace the `TOKEN` variable in the `main.py` file with the token provided by BotFather.
 3. Run the bot using the following command:
 
