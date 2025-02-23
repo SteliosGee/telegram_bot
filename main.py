@@ -81,10 +81,19 @@ async def list_subscribers(update: Update, context: CallbackContext):
     if len(rows) == 0:
         await update.message.reply_text("Δεν βρέθηκαν συνδρομητές.")
     else:
-        message = "Subscribers:\n"
+        message = "🧑‍🤝‍🧑 *Λίστα Συνδρομητών*:\n\n"
         for chat_id, username, subscription_date in rows:
-            message += f"{username} ({chat_id}) \nΑρχή συνδρομής: {subscription_date}\nΤέλος συνδρομής: {datetime.strptime(subscription_date, '%d/%m/%Y').date() + timedelta(days=30)}\n\n"
-        await update.message.reply_text(message)
+            subscription_end = datetime.strptime(subscription_date, '%d/%m/%Y').date() + timedelta(days=30)
+            message += (
+                f"• *Username*: {username} \n"
+                f"  🆔 *Chat ID*: {chat_id} \n"
+                f"  📅 *Ημερομηνία Συνδρομής*: {subscription_date} \n"
+                f"  ⏳ *Τέλος Συνδρομής*: {subscription_end.strftime('%d/%m/%Y')} \n\n"
+            )
+        
+        message += "⏬ Προβολή όλων των συνδρομητών ολοκληρώθηκε."
+        await update.message.reply_text(message, parse_mode='Markdown')
+
 
 async def pay(update: Update, context: CallbackContext):
     if await only_admin(update): return  # Await the async function here
